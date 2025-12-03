@@ -23,9 +23,6 @@ def get_maximum_2(line: str) -> int:
 
 
 def get_maximum_12(line: str) -> int:
-    """
-    From input "987654321101" find the maximum possible number using only two numbers, here: 98
-    """
     indices = list(range(12))
     for char_index, char in enumerate(line[12:], start=12):
         for list_index1, _list_char in enumerate(indices):
