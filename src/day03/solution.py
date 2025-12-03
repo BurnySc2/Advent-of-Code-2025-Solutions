@@ -53,6 +53,21 @@ def get_maximum_12(line: str) -> int:
     return result
 
 
+def get_maximum_simple(line: str, start_number: int) -> int:
+    """A simpler version added later."""
+    result = line[:start_number]
+    for line_char in line[start_number:]:
+        index = 0
+        for char1, char2 in zip(result, result[1:]):
+            if int(char1) < int(char2):
+                break
+            index += 1
+        if start_number == index:
+            continue
+        result = result[:index] + result[index + 1 :] + line_char
+    return int("".join(result))
+
+
 def solve(input_text: str) -> tuple[int, int]:
     result_sum_part1 = 0
     result_sum_part2 = 0
