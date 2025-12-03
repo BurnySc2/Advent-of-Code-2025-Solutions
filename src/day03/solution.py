@@ -68,6 +68,18 @@ def get_maximum_simple(line: str, start_number: int) -> int:
     return int("".join(result))
 
 
+def get_maximum_simple_list(line: str, start_number: int) -> int:
+    """A simpler version added later."""
+    result = list(map(int, line[:start_number]))
+    for line_char in line[start_number:]:
+        for index, (char1, char2) in enumerate(zip(result, result[1:])):
+            if char1 < char2 or (index == start_number - 2 and char2 < int(line_char)):
+                result.pop(index)
+                result.append(int(line_char))
+                break
+    return int("".join(map(str, result)))
+
+
 def solve(input_text: str) -> tuple[int, int]:
     result_sum_part1 = 0
     result_sum_part2 = 0
