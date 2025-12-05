@@ -16,7 +16,7 @@ def parse_input(input_text: str):
             second_part = True
             continue
 
-        if second_part == False:
+        if second_part is False:
             start, end = line.split("-")
             ranges.append((int(start), int(end)))
         else:
