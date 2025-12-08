@@ -40,7 +40,6 @@ def step_part1(
     closest_pairs: list[tuple[Vec, Vec, float]],
 ):
     # Find closest pair, that is not yet connected
-    min_distance = math.inf
     pair: list[Vec] = []
     for vec1, vec2, dist in closest_pairs:
         # Not connected
@@ -49,9 +48,9 @@ def step_part1(
         # Not itself
         if dist <= 0:
             continue
-        if dist < min_distance:
-            pair = [vec1, vec2]
-            min_distance = dist
+        pair = [vec1, vec2]
+        # closest_pairs is already sorted by closest distance, so we can break here
+        break
 
     # Assign color to junction box
     vec1, vec2 = pair
