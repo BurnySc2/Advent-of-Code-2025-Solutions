@@ -1,68 +1,116 @@
+# THIS YIELDS THE WRONG SOLUTION!
 # Run with
 # nim c -r -d:release src/day09/solution.nim
 import math
 import strutils
+import algorithm
 
-type Coord = tuple[x, y: int]
+type
+  Vec = tuple[x, y: int]
+  
+  Rect = object
+    x: int
+    y: int
+    width: int
+    height: int
 
-proc solvePart1(coords: seq[Coord]): int =
+proc area(rect: Rect): int =
+  return (rect.width + 1) * (rect.height + 1)
+
+type
+  Edge = object
+    start: Vec
+    finish: Vec
+
+proc rectInPolygon(
+  verticalEdges: seq[Edge],
+  horizontalEdges: seq[Edge],
+  rect: Rect
+): bool =
+  let right = rect.x + rect.width
+  for y in rect.y .. rect.y + rect.height:
+    var countBefore = 0
+    var hEdgesBefore = 0
+    var countInside = 0
+    
+    for edge in verticalEdges:
+      if not (edge.start.y <= y and y <= edge.finish.y):
+        # Edge not relevant for this y-value
+        continue
+      if edge.start.x <= rect.x:
+        # Count how many vertical edges there are on the left of the current point
+        countBefore += 1
+      if rect.x < edge.start.x and edge.start.x < right and y < edge.start.y:
+        # Count how many edges there are inside the polygon
+        countInside += 1
+
+    for edge in horizontalEdges:
+      if y != edge.start.y:
+        continue
+      if edge.start.x < rect.x or edge.finish.x < rect.x:
+        hEdgesBefore += 1
+
+    if countInside > 0:
+      return false
+    if (countBefore + hEdgesBefore) mod 2 == 0 and rect.width > 0 or countBefore == 0:
+      return false
+  return true
+
+proc solvePart1(coords: seq[Vec]): int =
   var maxValue = 0
   for i, coord1 in coords:
     for coord2 in coords[i + 1 .. ^1]:
-      let area = abs((coord1.x - coord2.x + 1) * (coord1.y - coord2.y + 1))
+      let area = abs((coord1.x - coord2.x + 1) * (coord1.y - coord2.y + 1)).int
       if maxValue < area:
         maxValue = area
   return maxValue
 
-proc pointInPolygon(points: seq[Coord], point: Coord): bool =
-  var count = 0
-  for i in 0 ..< points.len:
-    let (x1, y1) = points[i]
-    let (x2, y2) = points[(i + 1) mod points.len]
+proc solvePart2(coords: seq[Vec]): int =
+  var hEdges: seq[Edge] = @[]
+  var vEdges: seq[Edge] = @[]
+  
+  for i in 0 ..< coords.len:
+    var p1 = coords[i]
+    var p2 = coords[(i + 1) mod coords.len]
     
-    if y1 == y2:
-      if point.y == y1 and (point.x <= x1) != (point.x < x2):
-        return true
-    
-    if (point.y <= y1) != (point.y < y2):
-      if point.x == x1:
-        return true
-      if point.x < x1:
-        count += 1
-  return count mod 2 == 1
+    if p1.y == p2.y:
+      # Horizontal edge, skip
+      hEdges.add(Edge(start: p1, finish: p2))
+      continue
+    if p2.y < p1.y:
+      # Swap so that p1.y < p2.y
+      let temp = p1
+      p1 = p2
+      p2 = temp
+    vEdges.add(Edge(start: p1, finish: p2))
+  
+  # Sort ascending by y value of first point
+  vEdges = vEdges.sorted(proc(a, b: Edge): int = cmp(a.start.y, b.start.y))
 
-proc solvePart2(coords: seq[Coord]): int =
   var maxValue = 0
   for i, coord1 in coords:
-    if i + 2 >= coords.len:
-      break
-    for coord2 in coords[i + 2 .. ^1]:
-      let area = abs((coord1.x - coord2.x + 1) * (coord1.y - coord2.y + 1))
+    for j in 0 ..< coords.len:
+      let coord2 = coords[j mod coords.len]
+      # Calc area
+      let rect = Rect(
+        x: min(coord1.x, coord2.x),
+        y: min(coord1.y, coord2.y),
+        width: abs(coord1.x - coord2.x),
+        height: abs(coord1.y - coord2.y)
+      )
+      let area = area(rect)
       if area <= maxValue:
         continue
-      
-      let xStart = min(coord1.x, coord2.x)
-      let xEnd = max(coord1.x, coord2.x)
-      let yStart = min(coord1.y, coord2.y)
-      let yEnd = max(coord1.y, coord2.y)
-      
-      var allPointsInRect = true
-      block outer:
-        for x in xStart .. xEnd:
-          for y in yStart .. yEnd:
-            if not pointInPolygon(coords, (x, y)):
-              allPointsInRect = false
-              break outer
-      
-      if not allPointsInRect:
+
+      if not rectInPolygon(vEdges, hEdges, rect):
         continue
-      
+      # Set new value
       maxValue = area
   return maxValue
 
 proc solve(inputText: string): tuple[part1, part2: int] =
   let parsed = inputText.strip().split('\n')
-  var coords: seq[Coord] = @[]
+  var coords: seq[Vec] = @[]
   
   for line in parsed:
     let parts = line.split(',')
