@@ -2,6 +2,10 @@ from dataclasses import dataclass
 import math
 from pathlib import Path
 from typing import Literal
+from itertools import product
+import math
+from sympy import symbols, Matrix, linsolve
+from sympy import Tuple
 
 from loguru import logger
 
@@ -75,60 +79,53 @@ def solve_part1(parsed: list[MyInput]) -> int:
     return best_sum_part1
 
 
-# values = [joltage_values, button_presses, current_index]
-def validate(values: list[int], target: list[int]) -> Literal[0, 1, 2]:
-    if values[:-2] == target:
-        return 2
-    for value, t in zip(values, target):
-        if t < value:
-            return 0
-    return 1
+# TODO Try different limit values
+def part2_task_solver(
+    numbers: list[list[int]],
+    b_vector: list[int],
+    limit: int = 50,
+) -> int:
+    b_vec = Matrix(b_vector)
 
+    A = Matrix([[0 for _ in range(len(numbers))] for _ in range(len(b_vec))])
+    for x, numbers_array in enumerate(numbers):
+        for y in range(len(b_vec)):
+            if y in numbers_array:
+                A[y, x] = 1
 
-def add_button_to_solution(
-    solution: list[int], buttons: list[int], current_index: int
-) -> list[int]:
-    my_copy = list(solution)
-    my_copy[-2] += 1  # Increment "button presses"
-    my_copy[-1] = current_index  # Current index of buttons
-    for button in buttons:
-        my_copy[button] += 1
-    return my_copy
+    solution_set: list[Tuple] = linsolve((A, b_vec))  # pyright: ignore[reportAssignmentType]
 
+    best_result: int = math.inf  # pyright: ignore[reportAssignmentType]
+    # general_solution: Tuple = list(solution_set)[0]
+    for solution in solution_set:
+        vars_list: list[str] = sorted(solution.free_symbols, key=lambda s: s.name)  # pyright: ignore[reportUnknownLambdaType, reportAttributeAccessIssue, reportUnknownMemberType, reportAssignmentType]
 
-def part2_step(
-    current_solutions: list[list[int]],
-    target: list[int],
-    buttons_list: list[list[int]],
-) -> tuple[list[list[int]], int]:
-    new_solutions: list[list[int]] = []
-    for my_solution in current_solutions:
-        for current_index, buttons in enumerate(
-            buttons_list[my_solution[-1] :], start=my_solution[-1]
-        ):
-            new_solution = add_button_to_solution(my_solution, buttons, current_index)
-            result = validate(new_solution, target)
-            if result == 2:
-                return [], new_solution[-2]
-            if result == 1:
-                new_solutions.append(new_solution)
-    return new_solutions, -1
+        for values in product(range(limit), repeat=len(vars_list)):
+            assignment = dict(zip(vars_list, values))
+            # Now you can substitute into the expressions:
+            substituted: list[int] = solution.subs(assignment)  # pyright: ignore[reportUnknownMemberType, reportAssignmentType]
+
+            # A coefficient reached a value smaller than 0
+            if any(i < 0 for i in substituted):
+                continue
+            # A coefficient reached a value of a fraction
+            if any(i != int(i) for i in substituted):
+                continue
+
+            current_sum_coefficients = sum(substituted)
+            if current_sum_coefficients < best_result:
+                best_result = current_sum_coefficients
+    if best_result == math.inf:
+        return part2_task_solver(numbers, b_vector, limit * 2)
+    return best_result
 
 
 def solve_part2(parsed: list[MyInput]) -> int:
     best_sum_part2 = 0
-    for my_input in parsed:
-        logger.info(f"Working on: {my_input.target}")
-        my_input.buttons.sort(key=lambda i: len(i), reverse=True)
-        initial_solution = [0 for _ in my_input.joltage_requirements] + [0, 0]
-        current_solutions = [initial_solution]
-        while 1:
-            current_solutions, result = part2_step(
-                current_solutions, my_input.joltage_requirements, my_input.buttons
-            )
-            if result != -1:
-                best_sum_part2 += result
-                break
+    for i, my_input in enumerate(parsed):
+        solution = part2_task_solver(my_input.buttons, my_input.joltage_requirements)
+        logger.info(f"{i + 1} / {len(parsed)}")
+        best_sum_part2 += solution
 
     return best_sum_part2
 
@@ -147,9 +144,9 @@ def solve(input_text: str) -> tuple[int, int]:
 
 def main():
     # Sanity check
-    # example_line = """[....#..#.#] (1,4) (2,8) (0,1,2,4,5,7,8,9) (2,3) (1,2,4,5,6,7,8,9) (2,5) (0,4,8,9) (1,3,4,5,6,7,8,9) (0,2,4,9) (0,1) (1,3,7) {23,54,52,41,58,39,28,43,65,49}"""
-    # parsed = solve(example_line)
-    # assert parsed[0] == 1
+    example_line = """[....#..#.#] (1,4) (2,8) (0,1,2,4,5,7,8,9) (2,3) (1,2,4,5,6,7,8,9) (2,5) (0,4,8,9) (1,3,4,5,6,7,8,9) (0,2,4,9) (0,1) (1,3,7) {23,54,52,41,58,39,28,43,65,49}"""
+    parsed = solve(example_line)
+    assert parsed[0] == 4
 
     # Part 1
     solution_example = solve(input_text=input_example_text)
