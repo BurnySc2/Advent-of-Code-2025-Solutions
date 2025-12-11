@@ -1,7 +1,7 @@
-from functools import reduce
 import math
-from pathlib import Path
 from collections import Counter
+from functools import reduce
+from pathlib import Path
 
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()

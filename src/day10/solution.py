@@ -1,13 +1,11 @@
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
+from itertools import product
 from pathlib import Path
 from typing import Literal
-from itertools import product
-import math
-from sympy import symbols, Matrix, linsolve
-from sympy import Tuple
 
 from loguru import logger
+from sympy import Matrix, Tuple, linsolve
 
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()

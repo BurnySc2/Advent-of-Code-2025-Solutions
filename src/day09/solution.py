@@ -1,6 +1,6 @@
 # THIS YIELDS THE WRONG SOLUTION FOR PART 2!
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from pathlib import Path
 
 from loguru import logger
