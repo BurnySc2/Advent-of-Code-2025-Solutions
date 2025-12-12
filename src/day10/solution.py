@@ -1,11 +1,9 @@
 import math
 from dataclasses import dataclass
-from itertools import product
 from pathlib import Path
 from typing import Literal
 
-from loguru import logger
-from sympy import Matrix, Tuple, linsolve
+import pulp # pyright: ignore[reportMissingTypeStubs]
 
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()
@@ -77,52 +75,45 @@ def solve_part1(parsed: list[MyInput]) -> int:
     return best_sum_part1
 
 
-# TODO Try different limit values
 def part2_task_solver(
     numbers: list[list[int]],
     b_vector: list[int],
-    limit: int = 50,
 ) -> int:
-    b_vec = Matrix(b_vector)
-
-    A = Matrix([[0 for _ in range(len(numbers))] for _ in range(len(b_vec))])
+    matrix = [[0 for _ in range(len(numbers))] for _ in range(len(b_vector))]
     for x, numbers_array in enumerate(numbers):
-        for y in range(len(b_vec)):
+        for y in range(len(b_vector)):
             if y in numbers_array:
-                A[y, x] = 1
+                matrix[y][x] = 1
 
-    solution_set: list[Tuple] = linsolve((A, b_vec))  # pyright: ignore[reportAssignmentType]
+    # Define the problem
+    prob = pulp.LpProblem("Solve_Linear_System", pulp.LpMinimize)
 
-    best_result: int = math.inf  # pyright: ignore[reportAssignmentType]
-    # general_solution: Tuple = list(solution_set)[0]
-    for solution in solution_set:
-        vars_list: list[str] = sorted(solution.free_symbols, key=lambda s: s.name)  # pyright: ignore[reportUnknownLambdaType, reportAttributeAccessIssue, reportUnknownMemberType, reportAssignmentType]
+    # Create variables
+    x = [
+        pulp.LpVariable(f"x{i}", lowBound=0, cat=pulp.LpInteger)
+        for i in range(len(matrix[0]))
+    ]
 
-        for values in product(range(limit), repeat=len(vars_list)):
-            assignment = dict(zip(vars_list, values))
-            # Now you can substitute into the expressions:
-            substituted: list[int] = solution.subs(assignment)  # pyright: ignore[reportUnknownMemberType, reportAssignmentType]
+    # Objective: minimize the total sum
+    prob += pulp.lpSum(x), "Total_Sum"
 
-            # A coefficient reached a value smaller than 0
-            if any(i < 0 for i in substituted):
-                continue
-            # A coefficient reached a value of a fraction
-            if any(i != int(i) for i in substituted):
-                continue
+    # A_row * x == b_i
+    for i in range(len(matrix)):
+        prob += (
+            pulp.lpSum(matrix[i][j] * x[j] for j in range(len(matrix[0])))  # pyright: ignore[reportUnknownArgumentType]
+            == b_vector[i]
+        )
 
-            current_sum_coefficients = sum(substituted)
-            if current_sum_coefficients < best_result:
-                best_result = current_sum_coefficients
-    if best_result == math.inf:
-        return part2_task_solver(numbers, b_vector, limit * 2)
-    return best_result
+    # Solve the problem (uses CBC solver by default; msg=False suppresses log)
+    status = prob.solve(pulp.PULP_CBC_CMD(msg=False))  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+    assert pulp.LpStatus[status] == "Optimal"
+    return sum(int(i.varValue) for i in x)  # pyright: ignore[reportArgumentType]
 
 
 def solve_part2(parsed: list[MyInput]) -> int:
     best_sum_part2 = 0
-    for i, my_input in enumerate(parsed):
+    for my_input in parsed:
         solution = part2_task_solver(my_input.buttons, my_input.joltage_requirements)
-        logger.info(f"{i + 1} / {len(parsed)}")
         best_sum_part2 += solution
 
     return best_sum_part2
