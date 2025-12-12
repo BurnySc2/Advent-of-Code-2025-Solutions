@@ -2,13 +2,17 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+import grilops
+from grilops.geometry import Point, RectangularLattice, Vector
+from grilops.shapes import Shape, ShapeConstrainer
+
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()
 input_example_path = Path(__file__).parent / "example_input.txt"
 input_example_text = input_example_path.read_text()
 
-type Shape = list[str]
 type Grid = list[list[str]]
+type MyShape = list[str]
 
 
 @dataclass
@@ -18,8 +22,8 @@ class Region:
     shapes: list[int]
 
 
-def parse(text: str) -> tuple[list[Shape], list[Region]]:
-    shapes: list[Shape] = []
+def parse(text: str) -> tuple[list[MyShape], list[Region]]:
+    shapes: list[MyShape] = []
     regions: list[Region] = []
 
     current_shape: list[str] = []
@@ -45,159 +49,48 @@ def parse(text: str) -> tuple[list[Shape], list[Region]]:
     return shapes, regions
 
 
-def rotate_shape(shape: Shape, amount: int) -> Shape:
-    if amount == 0:
-        return shape
-    assert 0 < amount < 4
-    if amount == 1:
-        return [
-            "".join(shape[len(shape[0]) - y - 1][x] for y, _ in enumerate(shape))
-            for x, _ in enumerate(shape[0])
-        ]
-    if amount == 2:
-        return [shape[-i][::-1] for i, _ in enumerate(shape, start=1)]
-    if amount == 3:
-        return [
-            "".join(shape[y][-x] for y, _ in enumerate(shape))
-            for x, _ in enumerate(shape[0], start=1)
-        ]
-    return []
-
-
-assert rotate_shape(
-    ["...", "..#", "..."],
-    1,
-) == ["...", "...", ".#."]
-assert rotate_shape(
-    ["...", "..#", "..."],
-    2,
-) == ["...", "#..", "..."]
-assert rotate_shape(
-    ["...", "..#", "..."],
-    3,
-) == [".#.", "...", "..."]
-
-
-def mirror_shape(shape: Shape, mirror_axis: int) -> Shape:
-    if mirror_axis == -1:
-        return shape
-    assert mirror_axis in [0, 1]
-    if mirror_axis == 0:
-        return [i[::-1] for i in shape]
-    if mirror_axis == 1:
-        return [shape[-i] for i, _ in enumerate(shape, start=1)]
-    return []
-
-
-assert mirror_shape(
-    ["...", "..#", "..."],
-    0,
-) == ["...", "#..", "..."]
-assert mirror_shape(
-    ["...", "..#", ".#."],
-    1,
-) == [".#.", "..#", "..."]
-
-
-def can_place_shape(current_region: Grid, shape: Shape, pos: tuple[int, int]) -> bool:
-    # All shapes are 3x3
-    assert len(shape) == 3
-    assert len(shape[0]) == 3
-    y, x = pos
-    for offset_y in range(3):
-        for offset_x in range(3):
-            if (
-                current_region[y + offset_y][x + offset_x] == "#"
-                and shape[offset_y][offset_x] == "#"
-            ):
-                return False
-    return True
-
-
-def insert_shape_into_grid(
-    current_region: Grid, shape: Shape, pos: tuple[int, int]
-) -> Grid:
-    # Create copy
-    new_grid = [list(row) for row in current_region]
-    y, x = pos
-    for offset_y in range(3):
-        for offset_x in range(3):
-            if shape[offset_y][offset_x] == "#":
-                new_grid[y + offset_y][x + offset_x] = "#"
-    return new_grid
-
-
 def part1_step(
-    region: Grid,
-    shapes: list[Shape],
-    shapes_placed: list[int],
-    target_shapes_placed: list[int],
-    current_shape_index: int,
-    pos: tuple[int, int],
+    region: Region,
+    shapes: list[MyShape],
+    shapes_target: list[int],
 ) -> bool:
-    # Abort condition
-    if shapes_placed == target_shapes_placed:
-        return True
-    if len(shapes) <= current_shape_index:
-        return False
-    if len(region) - 2 <= pos[0]:
-        return False
-    if len(region[0]) - 2 <= pos[1]:
-        return False
+    points = [Point(y, x) for y in range(region.height) for x in range(region.width)]
+    lattice = RectangularLattice(points)
 
-    new_grid = None
-    shapes_placed_copy = None
-    inserted = False
-    # Enough shapes of that kind placed?
-    if shapes_placed[current_shape_index] < target_shapes_placed[current_shape_index]:
-        for mirror in range(-1, 2):
-            for rotation in range(0, 4):
-                if inserted:
-                    break
-                rotated = rotate_shape(
-                    mirror_shape(shapes[current_shape_index], mirror), rotation
-                )
-                if can_place_shape(region, rotated, pos):
-                    new_grid = insert_shape_into_grid(region, rotated, pos)
-                    shapes_placed_copy = list(shapes_placed)
-                    shapes_placed_copy[current_shape_index] += 1
-                    inserted = True
-    return (
-        part1_step(
-            new_grid or region,
-            shapes,
-            shapes_placed_copy or shapes_placed,
-            target_shapes_placed,
-            current_shape_index + 1,
-            pos,
+    my_shapes: list[Shape[Vector]] = [  # pyright: ignore[reportInvalidTypeArguments]
+        Shape(
+            [
+                Vector(y, x)
+                for y in range(3)
+                for x in range(3)
+                if shapes[shape_index][y][x] == "#"
+            ]
         )
-        or part1_step(
-            new_grid or region,
-            shapes,
-            shapes_placed_copy or shapes_placed,
-            target_shapes_placed,
-            0,
-            (pos[0] + 1, pos[1]),
-        )
-        or part1_step(
-            new_grid or region,
-            shapes,
-            shapes_placed_copy or shapes_placed,
-            target_shapes_placed,
-            0,
-            (0, pos[1] + 1),
-        )
+        for shape_index, count in enumerate(shapes_target)
+        for _ in range(count)
+    ]
+
+    sym = grilops.SymbolSet(["B", "W"])
+    sg = grilops.SymbolGrid(lattice, sym)
+    _sc = ShapeConstrainer(
+        lattice,
+        my_shapes,
+        sg.solver,
+        complete=False,
+        allow_rotations=True,
+        allow_reflections=True,
+        allow_copies=False,
     )
+
+    return bool(sg.solve())
 
 
 def solve(input_text: str) -> tuple[int, int]:
     shapes, regions = parse(input_text)
     count_possible = 0
     for region in regions:
-        grid = [["." for _ in range(region.width)] for _ in range(region.height)]
-        possible = part1_step(
-            grid, shapes, [0 for _ in shapes], region.shapes, 0, (0, 0)
-        )
+        # grid = [["." for _ in range(region.width)] for _ in range(region.height)]
+        possible = part1_step(region, shapes, region.shapes)
         if possible:
             count_possible += 1
     return count_possible, 0

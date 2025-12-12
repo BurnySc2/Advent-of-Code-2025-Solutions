@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "grilops>=0.10.3",
     "loguru>=0.7.3",
     "pulp>=3.3.0",
 ]

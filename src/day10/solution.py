@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-import pulp # pyright: ignore[reportMissingTypeStubs]
+import pulp  # pyright: ignore[reportMissingTypeStubs]
 
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()
