@@ -20,6 +20,7 @@ def solve(input_text: str) -> tuple[int, int]:
     for x, y in zip(xs_sorted, ys_sorted):
         part1_solution += abs(x - y)
 
+    # Part 2
     counter = Counter(ys)
     part2_solution = sum(x * counter[x] for x in xs)
     return part1_solution, part2_solution
