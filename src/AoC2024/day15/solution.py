@@ -1,11 +1,5 @@
-from collections.abc import Iterable, Sequence
-from curses import newpad
-import heapq
-from hmac import new
-import math
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal
-
 
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()

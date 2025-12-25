@@ -1,8 +1,6 @@
 import heapq
 import math
 from pathlib import Path
-from typing import Literal
-
 
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()
@@ -56,7 +54,7 @@ def solve(input_text: str) -> tuple[int, int]:
     ):
         if current_location == goal:
             paths.append(score)
-            return 
+            return
         if already_seen.get(current_location, math.inf) <= score:
             return
 
