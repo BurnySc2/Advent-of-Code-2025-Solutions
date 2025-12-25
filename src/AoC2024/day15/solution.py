@@ -22,7 +22,18 @@ def add_vec(v1: Vec, v2: Vec) -> Vec:
 
 
 def solve(input_text: str) -> tuple[int, int]:
-    grid = [list(row) for row in input_text.splitlines() if "#" in row]
+    grid_part1 = [list(row) for row in input_text.splitlines() if "#" in row]
+    grid_part2 = [
+        ["." for _ in range(len(grid_part1[0]) * 2)] for _ in range(len(grid_part1))
+    ]
+    for y, row in enumerate(grid_part1):
+        for x, value in enumerate(row):
+            left_value = "[" if value == "O" else value
+            right_value = "]" if value == "O" else value
+            if left_value == "@":
+                right_value = "."
+            grid_part2[y][2 * x] = left_value
+            grid_part2[y][2 * x + 1] = right_value
 
     directions_dict: dict[str, Vec] = {
         "v": (0, 1),
@@ -33,54 +44,95 @@ def solve(input_text: str) -> tuple[int, int]:
     robot_movements = "".join(
         row for row in input_text.splitlines() if any(char in row for char in "><^v")
     )
-    robot_position = next(
+    robot_position_part1 = next(
         (x, y)
-        for y, row in enumerate(grid)
+        for y, row in enumerate(grid_part1)
+        for x, value in enumerate(row)
+        if value == "@"
+    )
+    robot_position_part2 = next(
+        (x, y)
+        for y, row in enumerate(grid_part2)
         for x, value in enumerate(row)
         if value == "@"
     )
 
-    def move_item(position: Vec, direction: Vec) -> bool:
-        # Out of bounds
-        if get_char(grid, position) is None:
+    def position_available(grid: list[list[str]], position: Vec) -> bool:
+        # Current position is wall
+        return get_char(grid, position) != "#"
+
+    def move_item(grid: list[list[str]], position: Vec, direction: Vec) -> bool:
+        if not position_available(grid, position):
             return False
-        # Current position is empty
-        if get_char(grid, position) == "#":
+        # Early return, don't move empty spaces
+        char = get_char(grid, position)
+        if char is None:
             return False
-        if get_char(grid, position) == ".":
+        if char == ".":
             return True
+
         new_pos = add_vec(position, direction)
-        if move_item(new_pos, direction):
+        single_width = direction[1] == 0 or char not in "[]"
+
+        # Move part 1
+        if single_width and move_item(grid, new_pos, direction):
             grid[new_pos[1]][new_pos[0]] = grid[position[1]][position[0]]
             grid[position[1]][position[0]] = "."
             return True
+
+        if single_width:
+            return False
+
+        # Move part 2
+        offset = (1, 0) if char == "[" else (-1, 0)
+        position2 = add_vec(position, offset)
+        new_pos2 = add_vec(new_pos, offset)
+        if position_available(grid, new_pos) and position_available(grid, new_pos2):
+            moved_first = move_item(grid, new_pos, direction)
+            moved_second = move_item(grid, new_pos2, direction)
+            if not all([moved_first, moved_second]):
+                return False
+
+            grid[new_pos[1]][new_pos[0]] = grid[position[1]][position[0]]
+            grid[position[1]][position[0]] = "."
+
+            grid[new_pos2[1]][new_pos2[0]] = grid[position2[1]][position2[0]]
+            grid[position2[1]][position2[0]] = "."
+            return True
         return False
 
-    def get_score():
+    def get_score(grid: list[list[str]]):
         score = 0
         for y, row in enumerate(grid):
             for x, value in enumerate(row):
-                if value != "O":
+                if value not in "[O":
                     continue
                 score += 100 * y + x
         return score
 
-    for move in robot_movements:
+    for _debug_count, move in enumerate(robot_movements):
         direction = directions_dict[move]
-        new_pos = add_vec(robot_position, direction)
-        moved = move_item(robot_position, direction)
+        # Part 1
+        new_pos = add_vec(robot_position_part1, direction)
+        moved = move_item(grid_part1, robot_position_part1, direction)
         if moved:
-            robot_position = new_pos
-            # for row in grid:
+            robot_position_part1 = new_pos
+        # Part 2
+        new_pos = add_vec(robot_position_part2, direction)
+        moved = move_item(grid_part2, robot_position_part2, direction)
+        if moved:
+            robot_position_part2 = new_pos
+            # for row in grid_part2:
             #     print("".join(row))
-            # print()
+            # print(_debug_count)
 
-    answer_part1 = get_score()
+    answer_part1 = get_score(grid_part1)
+    answer_part2 = get_score(grid_part2)
 
     # for row in grid:
     #     print("".join(row))
 
-    return answer_part1, 0
+    return answer_part1, answer_part2
 
 
 def main():
@@ -98,7 +150,7 @@ def main():
     solution_example_part2 = solve(input_example_text)
     answer_example_part2 = solution_example_part2[1]
     print(f"The solution for the example for part2 is: {answer_example_part2=}")
-    assert answer_example_part2 == 7036
+    assert answer_example_part2 == 9021
 
     solution_part2 = solve(input_text)
     answer_part2 = solution_part2[1]
