@@ -1,8 +1,7 @@
+import re
 from operator import and_, or_, xor
 from pathlib import Path
-import re
 from typing import Callable
-
 
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()
