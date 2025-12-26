@@ -16,10 +16,9 @@ def solve(input_text: str) -> tuple[int, int]:
     def dfs(remaining_sequence: str) -> int:
         count = 0
         for word in words:
-            if remaining_sequence == word:
-                count += 1
-                continue
-            if len(remaining_sequence) < len(word):
+            if len(remaining_sequence) <= len(word):
+                if remaining_sequence == word:
+                    count += 1
                 continue
             if remaining_sequence.startswith(word):
                 count += dfs(remaining_sequence[len(word) :])
