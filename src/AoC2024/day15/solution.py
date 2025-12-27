@@ -57,49 +57,53 @@ def solve(input_text: str) -> tuple[int, int]:
         if value == "@"
     )
 
-    def position_available(grid: list[list[str]], position: Vec) -> bool:
-        # Current position is wall
-        return get_char(grid, position) != "#"
-
-    def move_item(grid: list[list[str]], position: Vec, direction: Vec) -> bool:
-        if not position_available(grid, position):
-            return False
-        # Early return, don't move empty spaces
+    def can_move(grid: list[list[str]], position: Vec, direction: Vec) -> bool:
         char = get_char(grid, position)
-        if char is None:
+        if char is None or char == "#":
             return False
         if char == ".":
             return True
-
         new_pos = add_vec(position, direction)
+
+        single_width = direction[1] == 0 or char not in "[]"
+        if single_width:
+            return can_move(grid, new_pos, direction)
+
+        offset = (1, 0) if char == "[" else (-1, 0)
+        new_pos2 = add_vec(new_pos, offset)
+        return can_move(grid, new_pos, direction) and can_move(
+            grid, new_pos2, direction
+        )
+
+    def move_item(grid: list[list[str]], position: Vec, direction: Vec) -> bool:
+        if not can_move(grid, position, direction):
+            return False
+        char = get_char(grid, position)
+        if char is None or char == ".":
+            return False
+
         single_width = direction[1] == 0 or char not in "[]"
 
         # Move part 1
-        if single_width and move_item(grid, new_pos, direction):
+        new_pos = add_vec(position, direction)
+        if single_width:
+            _ = move_item(grid, new_pos, direction)
             grid[new_pos[1]][new_pos[0]] = grid[position[1]][position[0]]
             grid[position[1]][position[0]] = "."
             return True
-
-        if single_width:
-            return False
 
         # Move part 2
         offset = (1, 0) if char == "[" else (-1, 0)
-        position2 = add_vec(position, offset)
         new_pos2 = add_vec(new_pos, offset)
-        if position_available(grid, new_pos) and position_available(grid, new_pos2):
-            moved_first = move_item(grid, new_pos, direction)
-            moved_second = move_item(grid, new_pos2, direction)
-            if not all([moved_first, moved_second]):
-                return False
+        _ = move_item(grid, new_pos, direction)
+        _ = move_item(grid, new_pos2, direction)
+        grid[new_pos[1]][new_pos[0]] = grid[position[1]][position[0]]
+        grid[position[1]][position[0]] = "."
 
-            grid[new_pos[1]][new_pos[0]] = grid[position[1]][position[0]]
-            grid[position[1]][position[0]] = "."
-
-            grid[new_pos2[1]][new_pos2[0]] = grid[position2[1]][position2[0]]
-            grid[position2[1]][position2[0]] = "."
-            return True
-        return False
+        position2 = add_vec(position, offset)
+        grid[new_pos2[1]][new_pos2[0]] = grid[position2[1]][position2[0]]
+        grid[position2[1]][position2[0]] = "."
+        return True
 
     def get_score(grid: list[list[str]]):
         score = 0

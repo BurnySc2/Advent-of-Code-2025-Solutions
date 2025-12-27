@@ -6,19 +6,6 @@ input_text = input_path.read_text()
 input_example_path = Path(__file__).parent / "example_input.txt"
 input_example_text = input_example_path.read_text()
 
-type Vec = tuple[int, int]
-
-
-def get_char(text_grid: list[str], pos: Vec) -> str:
-    # Out of grid
-    if not (0 <= pos[1] < len(text_grid)) or not (0 <= pos[0] < len(text_grid[0])):
-        return ""
-    return text_grid[pos[1]][pos[0]]
-
-
-def add_vec(v1: Vec, v2: Vec) -> Vec:
-    return v1[0] + v2[0], v1[1] + v2[1]
-
 
 def solve(input_text: str) -> tuple[int, int]:
     locks = list[list[str]]()
@@ -30,9 +17,6 @@ def solve(input_text: str) -> tuple[int, int]:
             locks.append(part)
         else:
             keys.append(part)
-
-    lock_heights = list[list[int]]()
-    key_heights = list[list[int]]()
 
     def get_height(part: list[str]) -> list[int]:
         heights = [
