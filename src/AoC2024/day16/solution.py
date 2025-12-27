@@ -28,7 +28,7 @@ def solve(input_text: str) -> tuple[int, int]:
 
     # total_score, x, y, dir_x, dir_y, debug_steps, debug_rotations
     queue = list[tuple[int, int, int, int, int, int, int]]()
-    already_seen = dict[tuple[int, int], int]()
+    visited = dict[tuple[int, int, int, int], int]()
 
     start = next(
         (x, y)
@@ -55,15 +55,15 @@ def solve(input_text: str) -> tuple[int, int]:
         if current_location == goal:
             paths.append(score)
             return
-        if already_seen.get(current_location, math.inf) <= score:
+        if visited.get((*current_location, *current_rotation), math.inf) <= score:
             return
 
-        already_seen[current_location] = score
+        visited[(*current_location, *current_rotation)] = score
 
         for neighbor in neighbors:
             new_pos = add_vec(current_location, neighbor)
             # Already visited, don't run in circles
-            if new_pos in already_seen:
+            if new_pos in visited:
                 continue
             char = get_char(grid, new_pos)
             # Wall check
