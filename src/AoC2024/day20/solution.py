@@ -1,6 +1,4 @@
 import math
-
-
 from heapq import heappop, heappush
 from pathlib import Path
 
@@ -178,6 +176,7 @@ def main():
     print(f"The solution for the part1 is: {answer_part1=}")
 
     # Part 2
+    # TODO
     solution_example = solve(input_example_text, cheat_duration=20, min_time_saved=50)
     answer_example_part2 = solution_example[1]
     print(f"The solution for the example for part2 is: {answer_example_part2=}")
