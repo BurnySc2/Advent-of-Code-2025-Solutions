@@ -14,20 +14,20 @@ def solve(input_text: str) -> tuple[str, int]:
     register_a = int(input_list[0].split(":")[1])
     register_b = int(input_list[1].split(":")[1])
     register_c = int(input_list[2].split(":")[1])
-    insturctions_list = input_list[4].split(":")[1].split(",")
+    instructions_list = input_list[4].split(":")[1].split(",")
     # instructions: list[Instruction] = []
     # for i in range(0, len(insturctions_list), 2):
     #     instructions.append((int(insturctions_list[i]), int(insturctions_list[i + 1])))
 
     instruction_pointer = 0
     out_values = list[int]()
-    while instruction_pointer < len(insturctions_list):
+    while instruction_pointer < len(instructions_list):
         opcode, operand = list(
             map(
                 int,
                 [
-                    insturctions_list[instruction_pointer],
-                    insturctions_list[instruction_pointer + 1],
+                    instructions_list[instruction_pointer],
+                    instructions_list[instruction_pointer + 1],
                 ],
             )
         )
