@@ -35,6 +35,9 @@ when is_main_module:
   echo fmt"The solution for the example for part2 is: {solution_example_part2.part2}"
   assert solution_example_part2.part2 == -1
 
-  let solution = solve(inputText)
+  let t0 = epoch_time()
+  let solution = solve(input_text)
+  let t1 = epoch_time()
   echo fmt"The solution for part1 is: {solution.part1}"
   echo fmt"The solution for part2 is: {solution.part2}"
+  echo fmt"Time taken: {format_float(t1 - t0, ffDecimal, precision = 6)} seconds"
