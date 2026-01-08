@@ -40,7 +40,6 @@ proc solve(input_text: string, part: Part = Part.part_both): tuple[part1, part2:
 
       let right_char = get_char(grid, (x + 1, y))
       if right_char == "" or right_char[0] notin Digits:
-        # echo (current_number, has_symbol_neighbor)
         if has_symbol_neighbor:
           result.part1 += current_number.parseInt
         current_number = ""
@@ -68,7 +67,6 @@ proc solve(input_text: string, part: Part = Part.part_both): tuple[part1, part2:
             break
           end_x = x + dx
         return (start_x, end_x, y)
-        # return grid[y][start_x..end_x].join.parseInt
 
       var numbers: seq[tuple[start_x, end_x, y: int]]
       for dx in -1 .. 1:
