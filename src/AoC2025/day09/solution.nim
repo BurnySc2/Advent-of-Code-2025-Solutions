@@ -1,13 +1,13 @@
 # THIS YIELDS THE WRONG SOLUTION!
 # Run with
-# nim c -r -d:release src/day09/solution.nim
+# nim r -d:release src/AoC2025/day09/solution.nim
 import math
 import strutils
 import algorithm
 
 type
   Vec = tuple[x, y: int]
-  
+
   Rect = object
     x: int
     y: int
@@ -17,22 +17,19 @@ type
 proc area(rect: Rect): int =
   return (rect.width + 1) * (rect.height + 1)
 
-type
-  Edge = object
-    start: Vec
-    finish: Vec
+type Edge = object
+  start: Vec
+  finish: Vec
 
 proc rectInPolygon(
-  verticalEdges: seq[Edge],
-  horizontalEdges: seq[Edge],
-  rect: Rect
+    verticalEdges: seq[Edge], horizontalEdges: seq[Edge], rect: Rect
 ): bool =
   let right = rect.x + rect.width
   for y in rect.y .. rect.y + rect.height:
     var countBefore = 0
     var hEdgesBefore = 0
     var countInside = 0
-    
+
     for edge in verticalEdges:
       if not (edge.start.y <= y and y <= edge.finish.y):
         # Edge not relevant for this y-value
@@ -68,11 +65,11 @@ proc solvePart1(coords: seq[Vec]): int =
 proc solvePart2(coords: seq[Vec]): int =
   var hEdges: seq[Edge] = @[]
   var vEdges: seq[Edge] = @[]
-  
+
   for i in 0 ..< coords.len:
     var p1 = coords[i]
     var p2 = coords[(i + 1) mod coords.len]
-    
+
     if p1.y == p2.y:
       # Horizontal edge, skip
       hEdges.add(Edge(start: p1, finish: p2))
@@ -83,9 +80,12 @@ proc solvePart2(coords: seq[Vec]): int =
       p1 = p2
       p2 = temp
     vEdges.add(Edge(start: p1, finish: p2))
-  
+
   # Sort ascending by y value of first point
-  vEdges = vEdges.sorted(proc(a, b: Edge): int = cmp(a.start.y, b.start.y))
+  vEdges = vEdges.sorted(
+    proc(a, b: Edge): int =
+      cmp(a.start.y, b.start.y)
+  )
 
   var maxValue = 0
   for i, coord1 in coords:
@@ -96,7 +96,7 @@ proc solvePart2(coords: seq[Vec]): int =
         x: min(coord1.x, coord2.x),
         y: min(coord1.y, coord2.y),
         width: abs(coord1.x - coord2.x),
-        height: abs(coord1.y - coord2.y)
+        height: abs(coord1.y - coord2.y),
       )
       let area = area(rect)
       if area <= maxValue:
@@ -111,33 +111,33 @@ proc solvePart2(coords: seq[Vec]): int =
 proc solve(inputText: string): tuple[part1, part2: int] =
   let parsed = inputText.strip().split('\n')
   var coords: seq[Vec] = @[]
-  
+
   for line in parsed:
     let parts = line.split(',')
     if parts.len >= 2:
       coords.add((parts[0].parseInt(), parts[1].parseInt()))
-  
+
   result.part1 = solvePart1(coords)
   result.part2 = solvePart2(coords)
 
 when isMainModule:
   import os
   import strformat
-  
+
   let inputPath = currentSourcePath.parentDir() / "input.txt"
   let inputText = readFile(inputPath)
-  
+
   let inputExamplePath = currentSourcePath.parentDir() / "example_input.txt"
   let inputExampleText = readFile(inputExamplePath)
-  
+
   let solutionExample = solve(inputExampleText)
   echo fmt"The solution for the example for part1 is: {solutionExample.part1}"
   assert solutionExample.part1 == 50
-  
+
   echo fmt"The solution for the example for part2 is: {solutionExample.part2}"
   assert solutionExample.part2 == 24
 
   let solution = solve(inputText)
   echo fmt"The solution for part1 is: {solution.part1}"
-  
+
   echo fmt"The solution for part2 is: {solution.part2}"

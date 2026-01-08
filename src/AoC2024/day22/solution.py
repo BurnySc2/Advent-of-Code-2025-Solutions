@@ -72,7 +72,7 @@ def solve(input_text: str) -> tuple[int, int]:
     sequences_total_sum = {
         sequence: sum(
             monkey_sequence_dict.get(sequence, 0)
-            for monkey_id, monkey_sequence_dict in part2_sequences.items()
+            for monkey_sequence_dict in part2_sequences.values()
         )
         for sequence in all_sequences
     }
