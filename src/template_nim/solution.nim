@@ -30,11 +30,11 @@ when is_main_module:
 
   let solution_example_part1 = solve(input_example_part1_text, Part.part1)
   echo fmt"The solution for the example for part1 is: {solution_example_part1.part1}"
-  assert solution_example_part1.part1 == -1
+  assert solution_example_part1.part1 == 0
 
   let solution_example_part2 = solve(input_example_part2_text, Part.part2)
   echo fmt"The solution for the example for part2 is: {solution_example_part2.part2}"
-  assert solution_example_part2.part2 == -1
+  assert solution_example_part2.part2 == 0
 
   let t0 = epoch_time()
   let solution = solve(input_text)
