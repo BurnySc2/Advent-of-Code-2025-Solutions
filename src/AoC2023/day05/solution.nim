@@ -10,7 +10,7 @@ type Part = enum
   part1 = 1
   part2 = 2
 
-type MapData = tuple[destination_start: int, source_start: int, length: int]
+type MapData = tuple[destination_start: int, source_start: int, source_end: int]
 
 proc solve(input_text: string, part: Part = Part.part_both): tuple[part1, part2: int] =
   let sections = input_text.split("\n\n")
@@ -26,7 +26,7 @@ proc solve(input_text: string, part: Part = Part.part_both): tuple[part1, part2:
 
   proc parse_map_data(data: string): MapData =
     let parts = data.split(" ").mapIt(it.parseInt)
-    result = (parts[0], parts[1], parts[2])
+    result = (parts[0], parts[1], parts[1] + parts[2])
 
   seeds = sections[0].split(":")[1].strip.split(" ").mapIt(it.parseInt)
   seed_to_soil = sections[1].split("\n")[1 ..^ 1].mapIt(parse_map_data(it))
@@ -44,9 +44,9 @@ proc solve(input_text: string, part: Part = Part.part_both): tuple[part1, part2:
       temp_to_hum, hum_to_loc,
     ]:
       for location_map in location_maps:
-        let (s, e) =
-          (location_map.source_start, location_map.source_start + location_map.length)
+        let (s, e) = (location_map.source_start, location_map.source_end)
         if s <= result and result < e:
+          # Only test once for location map
           result = result + location_map.destination_start - location_map.source_start
           break
 
@@ -63,7 +63,6 @@ proc solve(input_text: string, part: Part = Part.part_both): tuple[part1, part2:
     for seed_number in seed ..< seed + seed_length:
       let seed_location = get_locaton_for_seed(seed_number)
       result.part2 = result.part2.min(seed_location)
-    echo ("done with seed", seed)
 
 when is_main_module:
   import os
