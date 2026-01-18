@@ -4,11 +4,25 @@ import strutils
 import sequtils
 import math
 import times
+import algorithm
+import tables
 
 type Part = enum
   part_both = 0
   part1 = 1
   part2 = 2
+
+type Vec = tuple[x, y: int]
+
+proc `+`(p1, p2: Vec): Vec =
+  result = (p1.x + p2.x, p1.y + p2.y)
+
+proc get_char(grid: seq[string], p: Vec): string =
+  let height = grid.len
+  let width = grid[0].len
+  if not (0 <= p.x and p.x < width and 0 <= p.y and p.y < height):
+    return ""
+  return $grid[p.y][p.x]
 
 proc solve(input_text: string, part: Part = Part.part_both): tuple[part1, part2: int] =
   discard
