@@ -148,7 +148,7 @@ fn main() {
     let content_example_p2 = include_str!("example_input_p2.txt");
     let solution_example_p2 = solve(content_example_p2);
     println!("Solution example p2 is: {}", solution_example_p2.0);
-    assert_eq!(solution_example_p1.1, 952408144115);
+    assert_eq!(solution_example_p2.1, 952408144115);
 
     let content = include_str!("input.txt");
     let solution = solve(content);
