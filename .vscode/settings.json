@@ -1,4 +1,7 @@
 {
     "editor.formatOnSave": true,
     "python.testing.pytestEnabled": true,
+    "rust-analyzer.linkedProjects": [
+        "./src/AoC2023/day18/Cargo.toml"
+    ]
 }
