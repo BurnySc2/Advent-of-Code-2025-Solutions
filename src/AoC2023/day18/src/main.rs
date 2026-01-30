@@ -65,37 +65,24 @@ fn get_ranges(
     return (hashset_top_bottom, hashset_bottom_top);
 }
 
-fn solve(content: &str) -> (u64, u64) {
-    // Parse input
-    let mut instructions = Vec::new();
-    for line in content.split('\n') {
-        let [direction, number_str, hexadecimal] = line.split(' ').collect::<Vec<_>>()[..] else {
-            todo!()
-        };
-        let number = number_str.parse::<i32>().unwrap();
-
-        instructions.push(Instruction {
-            direction: direction.into(),
-            count: number,
-            hexadecimal: hexadecimal.into(),
-        });
-    }
-
-    // Part 1
+fn calculate_solution(instructions: &Vec<Instruction>) -> i128 {
     let (hashset_top_bottom, hashset_bottom_top) = get_ranges(&instructions);
 
     let y1_min = hashset_top_bottom.iter().map(|v| v.1).min().unwrap();
     let y1_max = hashset_top_bottom.iter().map(|v| v.3).max().unwrap();
     let mut hashset_top_bottom_sorted = hashset_top_bottom.into_iter().collect::<Vec<_>>();
-    hashset_top_bottom_sorted.sort_by_key(|v| v.1 * 10i32.pow(6) + v.0);
+    hashset_top_bottom_sorted.sort_by_key(|v| v.1 as i128 * 10i128.pow(12) + v.0 as i128);
 
     let y2_min = hashset_bottom_top.iter().map(|v| v.1).min().unwrap();
     let y2_max = hashset_bottom_top.iter().map(|v| v.3).max().unwrap();
     let mut hashset_bottom_top_sorted = hashset_bottom_top.into_iter().collect::<Vec<_>>();
-    hashset_bottom_top_sorted.sort_by_key(|v| v.1 * 10i32.pow(6) + v.0);
+    hashset_bottom_top_sorted.sort_by_key(|v| v.1 as i128 * 10i128.pow(12) + v.0 as i128);
 
-    let mut solution_part1 = 0;
-    for y in y1_min.min(y2_min)..y1_max.max(y2_max) + 1 {
+    let mut solution = 0i128;
+    let y_min = y1_min.min(y2_min);
+    let y_max = y1_max.max(y2_max);
+    // println!("y_min and y_max: {y_min} {y_max}");
+    for y in y_min..y_max + 1 {
         let mut verticals_top_bottom = hashset_top_bottom_sorted
             .iter()
             .filter(|v| v.1 <= y && y <= v.3)
@@ -120,25 +107,72 @@ fn solve(content: &str) -> (u64, u64) {
         }
         // Merge ranges
         x_ranges.sort_by_key(|v| v.1);
-        // println!("Ranges for '{y}': {x_ranges:?}");
-        let (mut start, mut end) = (-10i32.pow(9) + 1, -10i32.pow(9));
+        let (mut start, mut end) = (-10i128.pow(12) + 1, -10i128.pow(12));
         for (x0, x1) in x_ranges {
-            if end < x0 {
-                solution_part1 += end - start + 1;
-                start = x0;
-                end = x1;
+            if end < x0 as i128 {
+                solution += end - start + 1;
+                start = x0 as i128;
+                end = x1 as i128;
             } else {
-                start = start.min(x0);
-                end = end.max(x1);
+                start = start.min(x0 as i128);
+                end = end.max(x1 as i128);
             }
         }
         if start < end {
-            // println!("adding {}", end - start + 1);
-            solution_part1 += end - start + 1
+            solution += end - start + 1
         }
     }
 
-    return (solution_part1 as u64, 0);
+    return solution as i128;
+}
+
+fn solve(content: &str) -> (i128, i128) {
+    // Parse input
+    let mut instructions = Vec::new();
+    for line in content.split('\n') {
+        let [direction, number_str, hexadecimal] = line.split(' ').collect::<Vec<_>>()[..] else {
+            todo!()
+        };
+        let number = number_str.parse::<i32>().unwrap();
+
+        instructions.push(Instruction {
+            direction: direction.into(),
+            count: number,
+            hexadecimal: hexadecimal.into(),
+        });
+    }
+
+    // Part 1
+    let solution_part1 = calculate_solution(&instructions);
+
+    // Part 2
+    let part2_instructions = instructions
+        .iter()
+        .map(|v| {
+            // Convert hex code to new instruction
+            let mut hexadecimal = v.hexadecimal.clone();
+            // Remove brackets (), and first char which is just #
+            hexadecimal = hexadecimal[2..hexadecimal.len() - 1].into();
+            // Last char is the new direction
+            let new_direction = hexadecimal.pop().unwrap();
+            let new_count = i32::from_str_radix(&hexadecimal, 16).unwrap();
+            return Instruction {
+                direction: match new_direction {
+                    '0' => "R".into(),
+                    '1' => "D".into(),
+                    '2' => "L".into(),
+                    '3' => "U".into(),
+                    _ => panic!(),
+                },
+                count: new_count,
+                hexadecimal: "".into(),
+            };
+        })
+        .collect();
+
+    let solution_part2 = calculate_solution(&part2_instructions);
+
+    return (solution_part1, solution_part2);
 }
 
 fn main() {
@@ -149,10 +183,12 @@ fn main() {
 
     let content_example_p2 = include_str!("example_input_p2.txt");
     let solution_example_p2 = solve(content_example_p2);
-    println!("Solution example p2 is: {}", solution_example_p2.0);
+    println!("Solution example p2 is: {}", solution_example_p2.1);
     assert_eq!(solution_example_p2.1, 952408144115);
 
     let content = include_str!("input.txt");
     let solution = solve(content);
     println!("Solution p1 is: {}", solution.0);
+    // TODO Why is example p2 working but not for real input
+    println!("Solution p2 is: {}", solution.1);
 }
