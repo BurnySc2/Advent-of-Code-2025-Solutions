@@ -10,47 +10,59 @@ pub struct Instruction {
     pub hexadecimal: String,
 }
 
-fn get_dig_positions(
+fn get_ranges(
     instructions: &Vec<Instruction>,
-) -> (HashSet<(i32, i32)>, HashSet<(i32, i32)>) {
+) -> (HashSet<(i32, i32, i32, i32)>, HashSet<(i32, i32, i32, i32)>) {
     let mut position = (0, 0);
-    let mut positions = HashSet::<(i32, i32)>::new();
-    let mut dig_positions = HashSet::new();
+    let mut hashset_top_bottom = HashSet::<(i32, i32, i32, i32)>::new();
+    let mut hashset_bottom_top = HashSet::<(i32, i32, i32, i32)>::new();
 
     for instruction in instructions {
         match instruction.direction.as_str() {
             "R" => {
-                dig_positions.insert(position);
-                for _ in 0..instruction.count {
-                    position.0 += 1;
-                    dig_positions.insert(position);
-                }
+                position.0 += instruction.count;
             }
             "L" => {
-                dig_positions.insert(position);
-                for _ in 0..instruction.count {
-                    position.0 -= 1;
-                    dig_positions.insert(position);
-                }
+                position.0 -= instruction.count;
             }
             "D" => {
                 // Don't include top
-                for _ in 0..instruction.count {
-                    position.1 += 1;
-                    positions.insert(position);
-                }
+                hashset_top_bottom.insert((
+                    position.0,
+                    position.1 + 1,
+                    position.0,
+                    position.1 + instruction.count,
+                ));
+                // Don't include bottom
+                hashset_bottom_top.insert((
+                    position.0,
+                    position.1,
+                    position.0,
+                    position.1 + instruction.count - 1,
+                ));
+                position.1 += instruction.count;
             }
             "U" => {
                 // Don't include top
-                for _ in 0..instruction.count {
-                    positions.insert(position);
-                    position.1 -= 1;
-                }
+                hashset_top_bottom.insert((
+                    position.0,
+                    position.1 - instruction.count + 1,
+                    position.0,
+                    position.1,
+                ));
+                // Don't include bottom
+                hashset_bottom_top.insert((
+                    position.0,
+                    position.1 - instruction.count,
+                    position.0,
+                    position.1 - 1,
+                ));
+                position.1 -= instruction.count;
             }
             _ => println!("Ain't special"),
         }
     }
-    return (positions, dig_positions);
+    return (hashset_top_bottom, hashset_bottom_top);
 }
 
 fn solve(content: &str) -> (u64, u64) {
@@ -70,73 +82,63 @@ fn solve(content: &str) -> (u64, u64) {
     }
 
     // Part 1
-    let (positions, mut dig_positions) = get_dig_positions(&instructions);
-    let x_min = positions.iter().map(|v| v.0).min().unwrap();
-    let x_max = positions.iter().map(|v| v.0).max().unwrap();
-    let y_min = positions.iter().map(|v| v.1).min().unwrap();
-    let y_max = positions.iter().map(|v| v.1).max().unwrap();
+    let (hashset_top_bottom, hashset_bottom_top) = get_ranges(&instructions);
 
-    for y in y_min..y_max + 1 {
-        let mut inside = false;
-        for x in x_min..x_max + 1 {
-            if positions.contains(&(x, y)) {
-                inside = !inside;
-                dig_positions.insert((x, y));
-            }
-            if inside {
-                dig_positions.insert((x, y));
+    let y1_min = hashset_top_bottom.iter().map(|v| v.1).min().unwrap();
+    let y1_max = hashset_top_bottom.iter().map(|v| v.3).max().unwrap();
+    let mut hashset_top_bottom_sorted = hashset_top_bottom.into_iter().collect::<Vec<_>>();
+    hashset_top_bottom_sorted.sort_by_key(|v| v.1 * 10i32.pow(6) + v.0);
+
+    let y2_min = hashset_bottom_top.iter().map(|v| v.1).min().unwrap();
+    let y2_max = hashset_bottom_top.iter().map(|v| v.3).max().unwrap();
+    let mut hashset_bottom_top_sorted = hashset_bottom_top.into_iter().collect::<Vec<_>>();
+    hashset_bottom_top_sorted.sort_by_key(|v| v.1 * 10i32.pow(6) + v.0);
+
+    let mut solution_part1 = 0;
+    for y in y1_min.min(y2_min)..y1_max.max(y2_max) + 1 {
+        let mut verticals_top_bottom = hashset_top_bottom_sorted
+            .iter()
+            .filter(|v| v.1 <= y && y <= v.3)
+            .collect::<Vec<_>>();
+        verticals_top_bottom.sort_by_key(|v| v.0);
+
+        let mut verticals_bottom_top = hashset_bottom_top_sorted
+            .iter()
+            .filter(|v| v.1 <= y && y <= v.3)
+            .collect::<Vec<_>>();
+        verticals_bottom_top.sort_by_key(|v| v.0);
+
+        let mut x_ranges = Vec::new();
+
+        // Calculate top_bottom ranges
+        for i in (0..verticals_top_bottom.len()).step_by(2) {
+            x_ranges.push((verticals_top_bottom[i].0, verticals_top_bottom[i + 1].0));
+        }
+        // Calculate bottom_top ranges
+        for i in (0..verticals_bottom_top.len()).step_by(2) {
+            x_ranges.push((verticals_bottom_top[i].0, verticals_bottom_top[i + 1].0));
+        }
+        // Merge ranges
+        x_ranges.sort_by_key(|v| v.1);
+        // println!("Ranges for '{y}': {x_ranges:?}");
+        let (mut start, mut end) = (-10i32.pow(9) + 1, -10i32.pow(9));
+        for (x0, x1) in x_ranges {
+            if end < x0 {
+                solution_part1 += end - start + 1;
+                start = x0;
+                end = x1;
+            } else {
+                start = start.min(x0);
+                end = end.max(x1);
             }
         }
-    }
-    let solution_part1 = dig_positions.len() as u64;
-
-    // Part 2
-    // TODO too many positions
-    let part2_instructions = instructions
-        .iter()
-        .map(|v| {
-            // Convert hex code to new instruction
-            let mut hexadecimal = v.hexadecimal.clone();
-            // Remove brackets (), and first char which is just #
-            hexadecimal = hexadecimal[2..hexadecimal.len() - 1].into();
-            // Last char is the new direction
-            let new_direction = hexadecimal.pop().unwrap();
-            let new_count = i32::from_str_radix(&hexadecimal, 16).unwrap();
-            return Instruction {
-                direction: match new_direction {
-                    '0' => "R".into(),
-                    '1' => "D".into(),
-                    '2' => "L".into(),
-                    '3' => "U".into(),
-                    _ => panic!(),
-                },
-                count: new_count,
-                hexadecimal: "".into(),
-            };
-        })
-        .collect();
-
-    let (positions, mut dig_positions) = get_dig_positions(&part2_instructions);
-    let x_min = positions.iter().map(|v| v.0).min().unwrap();
-    let x_max = positions.iter().map(|v| v.0).max().unwrap();
-    let y_min = positions.iter().map(|v| v.1).min().unwrap();
-    let y_max = positions.iter().map(|v| v.1).max().unwrap();
-
-    for y in y_min..y_max + 1 {
-        let mut inside = false;
-        for x in x_min..x_max + 1 {
-            if positions.contains(&(x, y)) {
-                inside = !inside;
-                dig_positions.insert((x, y));
-            }
-            if inside {
-                dig_positions.insert((x, y));
-            }
+        if start < end {
+            // println!("adding {}", end - start + 1);
+            solution_part1 += end - start + 1
         }
     }
-    let solution_part2 = dig_positions.len() as u64;
 
-    return (solution_part1, solution_part2);
+    return (solution_part1 as u64, 0);
 }
 
 fn main() {
