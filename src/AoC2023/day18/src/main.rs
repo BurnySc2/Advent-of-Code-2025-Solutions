@@ -1,5 +1,6 @@
 // Run file with:
 // cargo run
+// cargo run --release
 
 use std::{collections::HashSet, time::Instant};
 
@@ -70,22 +71,23 @@ fn calculate_solution(instructions: &Vec<Instruction>) -> i128 {
 
     let y1_min = hashset_top_bottom.iter().map(|v| v.1).min().unwrap();
     let y1_max = hashset_top_bottom.iter().map(|v| v.3).max().unwrap();
-    let mut top_bottom_sorted = hashset_top_bottom.into_iter().collect::<Vec<_>>();
-    top_bottom_sorted.sort_by_key(|v| v.0);
-
     let y2_min = hashset_bottom_top.iter().map(|v| v.1).min().unwrap();
     let y2_max = hashset_bottom_top.iter().map(|v| v.3).max().unwrap();
-    let mut bottom_top_sorted = hashset_bottom_top.into_iter().collect::<Vec<_>>();
-    bottom_top_sorted.sort_by_key(|v| v.0);
-
-    let mut solution = 0i128;
     let y_min = y1_min.min(y2_min);
     let y_max = y1_max.max(y2_max);
+
+    let mut top_bottom_sorted: Vec<_> = hashset_top_bottom.into_iter().collect();
+    top_bottom_sorted.sort_by_key(|v| v.0);
+
+    let mut bottom_top_sorted: Vec<_> = hashset_bottom_top.into_iter().collect();
+    bottom_top_sorted.sort_by_key(|v| v.0);
+
+    let mut solution = 0i64;
     for y in y_min..y_max + 1 {
         let mut x_ranges = Vec::new();
 
-        let mut temp_value = None;
         // Calculate top_bottom ranges
+        let mut temp_value = None;
         for top2 in top_bottom_sorted.iter().filter(|v| v.1 <= y && y <= v.3) {
             match temp_value {
                 None => {
@@ -114,19 +116,18 @@ fn calculate_solution(instructions: &Vec<Instruction>) -> i128 {
 
         // Merge ranges
         x_ranges.sort_by_key(|v| v.0);
-        let (mut start, mut end) = (-10i128.pow(12) + 1, -10i128.pow(12));
+        let (mut start, mut end) = (-10i64.pow(12) + 1, -10i64.pow(12));
         for (x0, x1) in x_ranges {
-            if end < x0 as i128 {
-                solution += end - start + 1;
-                start = x0 as i128;
-                end = x1 as i128;
+            if end < x0 as i64 {
+                solution += (end - start + 1) as i64;
+                start = x0 as i64;
+                end = x1 as i64;
             } else {
-                start = start.min(x0 as i128);
-                end = end.max(x1 as i128);
+                end = end.max(x1 as i64);
             }
         }
         if start < end {
-            solution += end - start + 1
+            solution += (end - start + 1) as i64
         }
     }
 
