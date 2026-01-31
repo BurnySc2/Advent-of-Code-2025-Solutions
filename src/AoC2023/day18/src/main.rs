@@ -1,7 +1,7 @@
 // Run file with:
 // cargo run
 
-use std::collections::HashSet;
+use std::{collections::HashSet, time::Instant};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Instruction {
@@ -187,8 +187,11 @@ fn main() {
     assert_eq!(solution_example_p2.1, 952408144115);
 
     let content = include_str!("input.txt");
+
+    let t0 = Instant::now();
     let solution = solve(content);
+    let t1 = Instant::now();
     println!("Solution p1 is: {}", solution.0);
-    // TODO Why is example p2 working but not for real input
     println!("Solution p2 is: {}", solution.1);
+    println!("Time taken: {:.6} seconds", (t1 - t0).as_secs_f64());
 }
