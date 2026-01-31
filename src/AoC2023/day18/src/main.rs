@@ -106,7 +106,7 @@ fn calculate_solution(instructions: &Vec<Instruction>) -> i128 {
             x_ranges.push((verticals_bottom_top[i].0, verticals_bottom_top[i + 1].0));
         }
         // Merge ranges
-        x_ranges.sort_by_key(|v| v.1);
+        x_ranges.sort_by_key(|v| v.0);
         let (mut start, mut end) = (-10i128.pow(12) + 1, -10i128.pow(12));
         for (x0, x1) in x_ranges {
             if end < x0 as i128 {
