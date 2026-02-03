@@ -1,9 +1,12 @@
 from pathlib import Path
+from loguru import logger
 
+input_example_p1_path = Path(__file__).parent / "example_input_p1.txt"
+input_example_p1_text = input_example_p1_path.read_text()
+input_example_p2_path = Path(__file__).parent / "example_input_p2.txt"
+input_example_p2_text = input_example_p2_path.read_text()
 input_path = Path(__file__).parent / "input.txt"
 input_text = input_path.read_text()
-input_example_path = Path(__file__).parent / "example_input.txt"
-input_example_text = input_example_path.read_text()
 
 type Vec = tuple[int, int]
 
@@ -26,22 +29,22 @@ def solve(input_text: str) -> tuple[int, int]:
 
 def main():
     # Part 1
-    solution_example = solve(input_example_text)
-    answer_example_part1 = solution_example[0]
-    print(f"The solution for the example for part1 is: {answer_example_part1=}")
-    assert answer_example_part1 == 3749
+    solution_example_p1 = solve(input_example_p1_text)
+    answer_example_part1 = solution_example_p1[0]
+    logger.info(f"The solution for the example for part1 is: {answer_example_part1 = }")
+    assert answer_example_part1 == 19114
+
+    # Part 2
+    solution_example_p2 = solve(input_example_p2_text)
+    answer_example_part2 = solution_example_p2[1]
+    logger.info(f"The solution for the example for part2 is: {answer_example_part2 = }")
+    assert answer_example_part2 == 0
 
     solution = solve(input_text)
     answer_part1 = solution[0]
-    print(f"The solution for the part1 is: {answer_part1=}")
-
-    # Part 2
-    answer_example_part2 = solution_example[1]
-    print(f"The solution for the example for part2 is: {answer_example_part2=}")
-    assert answer_example_part2 == 11387
-
+    logger.info(f"The solution for the part1 is: {answer_part1 = }")
     answer_part2 = solution[1]
-    print(f"The solution for the part2 is: {answer_part2=}")
+    logger.info(f"The solution for the part2 is: {answer_part2 = }")
 
 
 if __name__ == "__main__":

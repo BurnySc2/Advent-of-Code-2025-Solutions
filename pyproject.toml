@@ -8,6 +8,7 @@ dependencies = [
     "grilops>=0.10.3",
     "loguru>=0.7.3",
     "pulp>=3.3.0",
+    "pydantic>=2.12.5",
 ]
 
 [dependency-groups]
